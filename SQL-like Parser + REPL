@@ -1,1 +1,58 @@
+const readline = require("readline");
+const Database = require("./rdbms");
+
+const db = new Database();
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  prompt: "db> "
+});
+
+console.log("Simple JS RDBMS. Type 'exit' to quit.");
+rl.prompt();
+
+rl.on("line", (line) => {
+  try {
+    const cmd = line.trim();
+
+    if (cmd === "exit") process.exit(0);
+
+    if (cmd.startsWith("CREATE TABLE")) {
+      // CREATE TABLE users (id PRIMARY, name, email UNIQUE)
+      const [, , name, cols] = cmd.match(/CREATE TABLE (\w+) \((.+)\)/);
+      const schema = {};
+      cols.split(",").forEach(c => {
+        const parts = c.trim().split(" ");
+        schema[parts[0]] = {
+          primary: parts.includes("PRIMARY"),
+          unique: parts.includes("UNIQUE")
+        };
+      });
+      db.createTable(name, schema);
+      console.log("Table created");
+    }
+
+    if (cmd.startsWith("INSERT INTO")) {
+      // INSERT INTO users VALUES (1, "Ann", "a@mail.com")
+      const [, table, values] = cmd.match(/INSERT INTO (\w+) VALUES \((.+)\)/);
+      const vals = JSON.parse("[" + values + "]");
+      const cols = Object.keys(db.table(table).schema);
+      const row = {};
+      cols.forEach((c, i) => row[c] = vals[i]);
+      db.table(table).insert(row);
+      console.log("Row inserted");
+    }
+
+    if (cmd.startsWith("SELECT")) {
+      const [, table] = cmd.match(/SELECT \* FROM (\w+)/);
+      console.table(db.table(table).rows);
+    }
+
+  } catch (e) {
+    console.error("Error:", e.message);
+  }
+
+  rl.prompt();
+});
 
