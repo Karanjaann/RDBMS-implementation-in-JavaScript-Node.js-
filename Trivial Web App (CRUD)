@@ -1,1 +1,53 @@
+const express = require("express");
+const Database = require("./rdbms");
+
+const app = express();
+const db = new Database();
+
+app.use(express.json());
+
+db.createTable("users", {
+  id: { primary: true },
+  name: {},
+  email: { unique: true }
+});
+
+app.post("/users", (req, res) => {
+  db.table("users").insert(req.body);
+  res.send("User added");
+});
+
+app.get("/users", (req, res) => {
+  res.json(db.table("users").rows);
+});
+
+app.put("/users/:id", (req, res) => {
+  db.table("users").update(
+    u => u.id == req.params.id,
+    req.body
+  );
+  res.send("User updated");
+});
+
+app.delete("/users/:id", (req, res) => {
+  db.table("users").delete(u => u.id == req.params.id);
+  res.send("User deleted");
+});
+
+app.listen(3000, () => console.log("Server running on port 3000"));
+
+
+Run:
+
+npm install express
+node app.js
+
+
+Test:
+
+POST   /users
+GET    /users
+PUT    /users/1
+DELETE /users/1
+
 
