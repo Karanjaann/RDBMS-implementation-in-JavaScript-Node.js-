@@ -1,1 +1,6 @@
+const users = db.table("users");
+const orders = db.table("orders");
+
+const joined = db.innerJoin(users, orders, "id", "userId");
+console.table(joined);
 
