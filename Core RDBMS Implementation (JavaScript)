@@ -1,1 +1,72 @@
+class Table {
+  constructor(name, schema) {
+    this.name = name;
+    this.schema = schema;
+    this.rows = [];
+    this.indexes = {};
+  }
+
+  insert(row) {
+    for (const col in this.schema) {
+      if (this.schema[col].primary) {
+        if (this.rows.find(r => r[col] === row[col])) {
+          throw new Error("Primary key violation");
+        }
+      }
+      if (this.schema[col].unique) {
+        if (this.rows.find(r => r[col] === row[col])) {
+          throw new Error("Unique key violation");
+        }
+      }
+    }
+    this.rows.push(row);
+  }
+
+  select(whereFn = () => true) {
+    return this.rows.filter(whereFn);
+  }
+
+  update(whereFn, updates) {
+    this.rows.forEach(row => {
+      if (whereFn(row)) {
+        Object.assign(row, updates);
+      }
+    });
+  }
+
+  delete(whereFn) {
+    this.rows = this.rows.filter(row => !whereFn(row));
+  }
+}
+
+class Database {
+  constructor() {
+    this.tables = {};
+  }
+
+  createTable(name, schema) {
+    this.tables[name] = new Table(name, schema);
+  }
+
+  table(name) {
+    if (!this.tables[name]) {
+      throw new Error("Table not found");
+    }
+    return this.tables[name];
+  }
+
+  innerJoin(t1, t2, key1, key2) {
+    const result = [];
+    for (const r1 of t1.rows) {
+      for (const r2 of t2.rows) {
+        if (r1[key1] === r2[key2]) {
+          result.push({ ...r1, ...r2 });
+        }
+      }
+    }
+    return result;
+  }
+}
+
+module.exports = Database;
 
